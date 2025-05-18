@@ -39,80 +39,92 @@ export default function Home() {
     <div
       style={{
         backgroundColor: "#f5f5d4",
-        minHeight: "100vh", // changed from height to minHeight
-        width: "100vw",     // added this line
+        minHeight: "100vh",
+        width: "100vw",
         display: "flex",
-        flexDirection: "column",
         alignItems: "center",
         fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
         padding: "2rem",
-        position: "relative",
-        boxSizing: "border-box", // ensures padding doesn't break layout
+        boxSizing: "border-box",
+        justifyContent: "center",
       }}
     >
-    <h1
-  style={{
-    color: "#5c7249",
-    fontSize: "3rem",
-    marginBottom: "1rem",
-    textShadow: "1px 1px 2px rgba(0,0,0,0.1)",
-    textAlign: "center",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-   // smaller gap for closer appearance
-  }}
->
-  <img
-    src="/logo.png" // or your image path
-    alt="Botautonomy Logo"
-    style={{
-      height: "4.8rem",   // match or slightly exceed font size
-      width: "7rem",      // rectangular, much wider than tall
-      marginRight: "0em", // minimal extra space to keep it close
-      objectFit: "contain",
-      verticalAlign: "middle"
-    }}
-  />
-  Botautonomy
-</h1>
-      <p
-        style={{
-          color: "#486135",
-          fontSize: "1.25rem",
-          maxWidth: "400px",
-          marginBottom: "2.5rem",
-          fontWeight: "500",
-          textAlign: "center",
-        }}
-      >
-       Grow, monitor, and care for your plants with a smart touch.
-      </p>
-
-      {/* Grid container for 4 buttons */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: "1rem",
-          justifyItems: "center",
-        }}
-      >
-        {gridButtons.map((btn) => (
-          <button
-            key={btn.route}
-            onClick={() => navigate(btn.route)}
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
-            style={buttonStyle}
-          >
-            {btn.label}
-          </button>
-        ))}
+      {/* Left: GIF */}
+      <div style={{ flex: "0 0 auto", display: "flex", alignItems: "center", justifyContent: "center", height: "100%" }}>
+        <img
+          src="/home.gif" // update this filename as needed
+          alt="Animated Bot"
+          style={{
+            width: "300px",
+            height: "auto",
+            marginRight: "-20rem", // try negative values!
+            borderRadius: "10px",
+            objectFit: "cover",
+          }}
+        />
       </div>
 
-      {/* Bottom-right User Profile button */}
-      
+      {/* Right: Main Content */}
+      <div style={{ flex: "1 1 0", display: "flex", flexDirection: "column", alignItems: "center" }}>
+        <h1
+          style={{
+            color: "#5c7249",
+            fontSize: "3rem",
+            marginBottom: "1rem",
+            textShadow: "1px 1px 2px rgba(0,0,0,0.1)",
+            textAlign: "center",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <img
+            src="/logo.png"
+            alt="Botautonomy Logo"
+            style={{
+              height: "4.8rem",
+              width: "7rem",
+              objectFit: "contain",
+              verticalAlign: "middle"
+            }}
+          />
+          Botautonomy
+        </h1>
+        <p
+          style={{
+            color: "#486135",
+            fontSize: "1.25rem",
+            maxWidth: "400px",
+            marginBottom: "2.5rem",
+            fontWeight: "500",
+            textAlign: "center",
+          }}
+        >
+          Grow, monitor, and care for your plants with a smart touch.
+        </p>
+
+        {/* Grid container for 4 buttons */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: "1rem",
+            justifyItems: "center",
+          }}
+        >
+          {gridButtons.map((btn) => (
+            <button
+              key={btn.route}
+              onClick={() => navigate(btn.route)}
+              onMouseEnter={handleMouseEnter}
+              onMouseLeave={handleMouseLeave}
+              style={buttonStyle}
+            >
+              {btn.label}
+            </button>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
