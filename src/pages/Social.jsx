@@ -10,10 +10,10 @@ export default function Social() {
       : [
           {
             id: 1,
-            plantName: "Aloe Vera",
-            caption: "My healthy Aloe!",
+            plantName: "Share your plant!",
+            caption: "More likes = More points",
             imageUrl:
-              "https://images.unsplash.com/photo-1501004318641-b39e6451bec6?auto=format&fit=crop&w=500&q=80",
+              "https://plus.unsplash.com/premium_photo-1663962158789-0ab624c4f17d?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
           },
         ];
   });
@@ -100,9 +100,10 @@ export default function Social() {
             value={plantName}
             onChange={(e) => setPlantName(e.target.value)}
             style={{
-              width: "100%",
+              width: "90%",
               marginBottom: 12,
-              padding: "12px 15px",
+              marginLeft: 13,
+              padding: "15px 15px",
               fontSize: "1rem",
               borderRadius: "8px",
               border: "2px solid #5c7249",
@@ -118,7 +119,8 @@ export default function Social() {
             value={caption}
             onChange={(e) => setCaption(e.target.value)}
             style={{
-              width: "100%",
+              width: "90%",
+              marginLeft: 13,
               marginBottom: 12,
               padding: "12px 15px",
               fontSize: "1rem",
@@ -136,7 +138,8 @@ export default function Social() {
             value={imageUrl}
             onChange={(e) => setImageUrl(e.target.value)}
             style={{
-              width: "100%",
+              width: "90%",
+              marginLeft: 13,
               marginBottom: 16,
               padding: "12px 15px",
               fontSize: "1rem",

@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import * as tmImage from "@teachablemachine/image";
+import { getUserIdByName, updateUserPoints } from "../utils/firebaseUtils";
 
-// Load the model once (outside the component)
+// Teachable Machine model URLs
 const modelURL = "https://teachablemachine.withgoogle.com/models/86A_E1N9A/model.json";
 const metadataURL = "https://teachablemachine.withgoogle.com/models/86A_E1N9A/metadata.json";
 let model;
@@ -17,21 +18,19 @@ async function predictHealth(imageBase64) {
   img.src = imageBase64;
   await new Promise(resolve => img.onload = resolve);
   const prediction = await model.predict(img);
-  console.log("Full prediction array:", prediction);
   const result = prediction.reduce((prev, curr) => (curr.probability > prev.probability ? curr : prev));
-  console.log("Highest className:", result.className);
   return result.className;
 }
 
 function moodFromHealth(health) {
   if (!health) return "🤔 Unknown";
   const h = health.toLowerCase();
-  if (h.includes("healthy")) return "😊 Happy";
+  if (h.includes("really happy")) return "😄 Really Happy";
+  if (h.includes("happy")) return "😊 Happy";
   if (h.includes("disease") || h.includes("unhealthy") || h.includes("sad") || h.includes("dead")) return "😢 Sad";
   return "🤔 Unknown";
 }
 
-// ESP Camera URL (adjust to match your actual camera endpoint)
 const ESP_CAMERA_URL = "http://10.37.108.72/capture";
 
 export default function Plants() {
@@ -45,8 +44,6 @@ export default function Plants() {
     image: null,
   });
   const [selectedPlantIndex, setSelectedPlantIndex] = useState(null);
-
-  // Camera states
   const [cameraImage, setCameraImage] = useState(null);
   const [cameraPrediction, setCameraPrediction] = useState(null);
   const [cameraLoading, setCameraLoading] = useState(false);
@@ -76,34 +73,46 @@ export default function Plants() {
   };
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
-  if (formData.name && formData.species && formData.image) {
-    const health = await predictHealth(formData.image);
-    console.log("UPLOAD: Model prediction result:", health);
-    setPlants([...plants, { ...formData, health }]);
-    setFormData({ name: "", species: "", image: null });
-  }
-};
+    e.preventDefault();
+    if (formData.name && formData.species && formData.image) {
+      const health = await predictHealth(formData.image);
+      setPlants([...plants, { ...formData, health }]);
+      setFormData({ name: "", species: "", image: null });
+
+      // --- Firestore logic ---
+      // Ensure user exists or create with 0 points
+      const userId = await getUserIdByName(formData.name);
+
+      // If plant is "really happy", add 5 points
+      if (health.toLowerCase().includes("really happy")) {
+        await updateUserPoints(userId, 5);
+      }
+    }
+  };
 
   // CAMERA FUNCTIONALITY
-  // Called when you click the camera button on a plant card
   const handleCameraClick = async (plantIndex) => {
     setSelectedPlantIndex(plantIndex);
     setCameraImage(null);
     setCameraPrediction(null);
     setCameraLoading(true);
     try {
-      // Fetch the image from the ESP camera
-      const response = await fetch(ESP_CAMERA_URL + "?t=" + Date.now()); // add timestamp to avoid caching
+      const response = await fetch(ESP_CAMERA_URL + "?t=" + Date.now());
       const blob = await response.blob(); 
       const reader = new FileReader();
       reader.readAsDataURL(blob);
       reader.onloadend = async () => {
         const base64 = reader.result;
         setCameraImage(base64);
-        // Predict health with the Teachable Machine model
         const health = await predictHealth(base64);
         setCameraPrediction(health);
+
+        // If you want to also award points for camera "really happy", you can add similar logic here:
+        // const userId = await getUserIdByName(plants[plantIndex].name);
+        // if (health.toLowerCase().includes("really happy")) {
+        //   await updateUserPoints(userId, 5);
+        // }
+
         setCameraLoading(false);
       };
     } catch {
@@ -114,16 +123,14 @@ export default function Plants() {
   };
 
   return (
-    <div
-      style={{
-        backgroundColor: "#f5f5d4",
-        minHeight: "100vh",
-        width: "100vw",
-        padding: "2rem",
-        fontFamily: "'Segoe UI', sans-serif",
-        color: "#5c7249",
-      }}
-    >
+    <div style={{
+      backgroundColor: "#f5f5d4",
+      minHeight: "100vh",
+      width: "100vw",
+      padding: "2rem",
+      fontFamily: "'Segoe UI', sans-serif",
+      color: "#5c7249",
+    }}>
       <Link
         to="/"
         style={{
@@ -142,15 +149,11 @@ export default function Plants() {
         Home
       </Link>
 
-      <h1
-        style={{
-          fontSize: "2.5rem",
-          marginBottom: "1.5rem",
-          textAlign: "center",
-        }}
-      >
-        🪴 My Plants
-      </h1>
+      <h1 style={{
+        fontSize: "2.5rem",
+        marginBottom: "1.5rem",
+        textAlign: "center",
+      }}>🪴 My Plants</h1>
 
       <form
         onSubmit={handleSubmit}
@@ -167,7 +170,6 @@ export default function Plants() {
         <h2 style={{ marginBottom: "1rem", color: "#5c7249" }}>
           Register a Plant
         </h2>
-
         <label style={{ display: "block", marginBottom: "0.5rem" }}>
           Name:
           <input

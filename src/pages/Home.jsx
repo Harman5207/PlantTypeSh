@@ -50,17 +50,32 @@ export default function Home() {
         boxSizing: "border-box", // ensures padding doesn't break layout
       }}
     >
-      <h1
-        style={{
-          color: "#5c7249",
-          fontSize: "3rem",
-          marginBottom: "1rem",
-          textShadow: "1px 1px 2px rgba(0,0,0,0.1)",
-          textAlign: "center",
-        }}
-      >
-        plants type shi 🌱
-      </h1>
+    <h1
+  style={{
+    color: "#5c7249",
+    fontSize: "3rem",
+    marginBottom: "1rem",
+    textShadow: "1px 1px 2px rgba(0,0,0,0.1)",
+    textAlign: "center",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+   // smaller gap for closer appearance
+  }}
+>
+  <img
+    src="/logo.png" // or your image path
+    alt="Botautonomy Logo"
+    style={{
+      height: "4.8rem",   // match or slightly exceed font size
+      width: "7rem",      // rectangular, much wider than tall
+      marginRight: "0em", // minimal extra space to keep it close
+      objectFit: "contain",
+      verticalAlign: "middle"
+    }}
+  />
+  Botautonomy
+</h1>
       <p
         style={{
           color: "#486135",
@@ -71,7 +86,7 @@ export default function Home() {
           textAlign: "center",
         }}
       >
-        bunty plants plants
+       Grow, monitor, and care for your plants with a smart touch.
       </p>
 
       {/* Grid container for 4 buttons */}
@@ -97,19 +112,7 @@ export default function Home() {
       </div>
 
       {/* Bottom-right User Profile button */}
-      <button
-        onClick={() => navigate("/profile")}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
-        style={{
-          ...buttonStyle,
-          position: "absolute",
-          bottom: "4rem",
-          right: "2rem",
-        }}
-      >
-        Profile
-      </button>
+      
     </div>
   );
 }
