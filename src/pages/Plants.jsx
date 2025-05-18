@@ -1,13 +1,44 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";  // <-- Import Link here
+import { Link } from "react-router-dom";
+import * as tmImage from "@teachablemachine/image";
+
+// Load the model once (outside the component)
+const modelURL = "https://teachablemachine.withgoogle.com/models/86A_E1N9A/model.json";
+const metadataURL = "https://teachablemachine.withgoogle.com/models/86A_E1N9A/metadata.json";
+let model;
+async function loadModel() {
+  if (!model) {
+    model = await tmImage.load(modelURL, metadataURL);
+  }
+}
+async function predictHealth(imageBase64) {
+  await loadModel();
+  const img = document.createElement("img");
+  img.src = imageBase64;
+  await new Promise(resolve => img.onload = resolve);
+  const prediction = await model.predict(img);
+  console.log("Full prediction array:", prediction);
+  const result = prediction.reduce((prev, curr) => (curr.probability > prev.probability ? curr : prev));
+  console.log("Highest className:", result.className);
+  return result.className;
+}
+
+function moodFromHealth(health) {
+  if (!health) return "🤔 Unknown";
+  const h = health.toLowerCase();
+  if (h.includes("healthy")) return "😊 Happy";
+  if (h.includes("disease") || h.includes("unhealthy") || h.includes("sad") || h.includes("dead")) return "😢 Sad";
+  return "🤔 Unknown";
+}
+
+// ESP Camera URL (adjust to match your actual camera endpoint)
+const ESP_CAMERA_URL = "http://10.37.108.72/capture";
 
 export default function Plants() {
-  // Load plants from localStorage or start with empty array
   const [plants, setPlants] = useState(() => {
     const savedPlants = localStorage.getItem("plants");
     return savedPlants ? JSON.parse(savedPlants) : [];
   });
-
   const [formData, setFormData] = useState({
     name: "",
     species: "",
@@ -15,12 +46,15 @@ export default function Plants() {
   });
   const [selectedPlantIndex, setSelectedPlantIndex] = useState(null);
 
-  // Save plants to localStorage whenever plants state changes
+  // Camera states
+  const [cameraImage, setCameraImage] = useState(null);
+  const [cameraPrediction, setCameraPrediction] = useState(null);
+  const [cameraLoading, setCameraLoading] = useState(false);
+
   useEffect(() => {
     localStorage.setItem("plants", JSON.stringify(plants));
   }, [plants]);
 
-  // Helper to convert file to base64 string (for image persistence)
   const fileToBase64 = (file) =>
     new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -41,17 +75,42 @@ export default function Plants() {
     }
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (formData.name && formData.species && formData.image) {
-      setPlants([...plants, formData]);
-      setFormData({ name: "", species: "", image: null });
-    }
-  };
+  const handleSubmit = async (e) => {
+  e.preventDefault();
+  if (formData.name && formData.species && formData.image) {
+    const health = await predictHealth(formData.image);
+    console.log("UPLOAD: Model prediction result:", health);
+    setPlants([...plants, { ...formData, health }]);
+    setFormData({ name: "", species: "", image: null });
+  }
+};
 
-  const moodFromHealth = () => {
-    const moods = ["😊 Happy", "👅💦 Thirsty", "😢 Sad", "💀 Dying"];
-    return moods[Math.floor(Math.random() * moods.length)];
+  // CAMERA FUNCTIONALITY
+  // Called when you click the camera button on a plant card
+  const handleCameraClick = async (plantIndex) => {
+    setSelectedPlantIndex(plantIndex);
+    setCameraImage(null);
+    setCameraPrediction(null);
+    setCameraLoading(true);
+    try {
+      // Fetch the image from the ESP camera
+      const response = await fetch(ESP_CAMERA_URL + "?t=" + Date.now()); // add timestamp to avoid caching
+      const blob = await response.blob(); 
+      const reader = new FileReader();
+      reader.readAsDataURL(blob);
+      reader.onloadend = async () => {
+        const base64 = reader.result;
+        setCameraImage(base64);
+        // Predict health with the Teachable Machine model
+        const health = await predictHealth(base64);
+        setCameraPrediction(health);
+        setCameraLoading(false);
+      };
+    } catch {
+      setCameraImage(null);
+      setCameraPrediction("Error");
+      setCameraLoading(false);
+    }
   };
 
   return (
@@ -183,11 +242,6 @@ export default function Plants() {
         {plants.map((plant, index) => (
           <div
             key={index}
-            onClick={() =>
-              selectedPlantIndex === index
-                ? setSelectedPlantIndex(null)
-                : setSelectedPlantIndex(index)
-            }
             style={{
               backgroundColor: "#ffffff",
               marginBottom: "1rem",
@@ -199,18 +253,59 @@ export default function Plants() {
             }}
           >
             <strong>{plant.name}</strong> ({plant.species})
-            {selectedPlantIndex === index && (
-              <div style={{ marginTop: "1rem" }}>
-                <img
-                  src={plant.image}
-                  alt={plant.name}
-                  style={{ width: "100%", maxWidth: "300px", borderRadius: "8px" }}
-                />
-                <p style={{ marginTop: "0.5rem" }}>
-                  State: <strong>{moodFromHealth()}</strong>
-                </p>
-              </div>
-            )}
+            <button
+              style={{
+                marginLeft: "1rem",
+                backgroundColor: "#c7d7ae",
+                color: "#5c7249",
+                border: "none",
+                padding: "0.5rem 1rem",
+                borderRadius: "8px",
+                cursor: "pointer",
+                fontSize: "0.9rem",
+                float: "right"
+              }}
+              onClick={() => handleCameraClick(index)}
+            >
+              Camera
+            </button>
+            <div style={{ clear: "both" }}></div>
+            <div style={{ marginTop: "1rem" }}>
+              <img
+                src={plant.image}
+                alt={plant.name}
+                style={{ width: "100%", maxWidth: "300px", borderRadius: "8px" }}
+              />
+              <p style={{ marginTop: "0.5rem" }}>
+                State: <strong>{moodFromHealth(plant.health)}</strong>
+              </p>
+              {selectedPlantIndex === index && (
+                <div
+                  style={{
+                    marginTop: "1rem",
+                    padding: "1rem",
+                    background: "#f5f5f5",
+                    borderRadius: "8px",
+                    border: "1px solid #c7d7ae"
+                  }}
+                >
+                  <h4>ESP Camera Snapshot</h4>
+                  {cameraLoading && <p>Loading camera...</p>}
+                  {cameraImage && (
+                    <img
+                      src={cameraImage}
+                      alt="ESP Camera"
+                      style={{ width: "100%", maxWidth: "300px", borderRadius: "8px" }}
+                    />
+                  )}
+                  {cameraPrediction && (
+                    <p>
+                      Camera State: <strong>{moodFromHealth(cameraPrediction)}</strong>
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         ))}
       </div>

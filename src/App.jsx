@@ -9,8 +9,6 @@ export default function App() {
   return (
     <Router>
       <div>
-        <h1>My App</h1>
-        <FirestoreTest />
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/social" element={<Social />} />
